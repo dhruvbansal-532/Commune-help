@@ -1,0 +1,19 @@
+# Ignore Python compilation caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore local environment variable files (security best practice)
+.env
+.venv/
+env/
+venv/
+
+# Ignore local IDE configurations
+.vscode/
+.idea/
+
+# Ignore git metadata
+.git
+.gitignore
