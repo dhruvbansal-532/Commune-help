@@ -28,8 +28,15 @@ def check_duplicate_reports(latitude: float, longitude: float):
     # Hardcoded simulation tool for agentic workflow verification
     return "MATCH FOUND: Active issue ID #1042 (Broken Streetlight) exists within 12 meters."
 
-def analyze_issue_with_gemini(image_file, lat, lng):
-    img = Image.open(image_file)
+def analyze_issue_with_gemini(uploaded_file, latitude, longitude):
+    import google.genai as genai
+    from PIL import Image
+    import json  # 🧠 Ensure json is imported
+    
+    ai_client = genai.Client() 
+    image = Image.open(uploaded_file)
+    
+    # Keeping our precise system instruction format from earlier
     system_instruction = (
         "You are an expert, autonomous municipal triage agent. Analyze the community issue image.\n"
         "You MUST respond ONLY with a raw JSON object matching this structure:\n"
@@ -42,33 +49,31 @@ def analyze_issue_with_gemini(image_file, lat, lng):
         '  "system_action_taken": "Text description"\n'
         "}"
     )
-    prompt = f"A citizen reported this issue at coordinates: Latitude {lat}, Longitude {lng}."
+    prompt = f"A citizen reported this issue at coordinates: Latitude {latitude}, Longitude {longitude}."
     
-    response = client.models.generate_content(
+    response = ai_client.models.generate_content(
         model='gemini-2.5-flash',
-        contents=[img, prompt],
-        config=types.GenerateContentConfig(
+        contents=[image, prompt],
+        config=genai.types.GenerateContentConfig(
             system_instruction=system_instruction,
-            tools=[check_duplicate_reports],
             temperature=0.1
         )
     )
     
-    # --- BULLETPROOF JSON CLEANING START ---
+    # --- CLEAN & CONVERT BACK TO DICTIONARY ---
     raw_text = response.text.strip()
     
-    # Remove markdown code block wrappers if Gemini accidentally included them
+    # Strip markdown wrappers if Gemini adds them
     if raw_text.startswith("```json"):
         raw_text = raw_text[7:]
     elif raw_text.startswith("```"):
         raw_text = raw_text[3:]
-        
     if raw_text.endswith("```"):
         raw_text = raw_text[:-3]
         
     raw_text = raw_text.strip()
-    # --- BULLETPROOF JSON CLEANING END ---
     
+    # 🎯 Crucial Line: Convert string back to a Python Dictionary!
     return json.loads(raw_text)
 
 # =====================================================================
