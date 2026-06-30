@@ -4,12 +4,14 @@ import pandas as pd
 from PIL import Image
 from google import genai
 from google.genai import types
+from theme import inject_theme, badge, stepper
 
 
 # =====================================================================
 # 1. CONFIGURATION & INITIALIZATION
 # =====================================================================
 st.set_page_config(page_title="Commune Help", page_icon="🤝", layout="wide")
+inject_theme()
 
 # Safe initialization using dictionary checking syntax
 if "issues_db" not in st.session_state:
@@ -84,12 +86,28 @@ st.title("🤝 Commune Help — Hyperlocal Problem Solver")
 st.markdown("Empowering citizens to build better neighborhoods through autonomous AI triage and collaboration.")
 
 # Sidebar Navigation / Analytics
-st.sidebar.header("🏆 Citizen Leaderboard")
-st.sidebar.markdown("""
-1. 🥇 **Dhruv (You)** — 450 pts
-2. 🥈 **Aarav Sharma** — 380 pts
-3. 🥉 **Sneha Gupta** — 210 pts
-""")
+st.sidebar.markdown("### 🏆 Citizen Leaderboard")
+leaderboard_data = [
+    ("🥇", "gold", "Dhruv (You)", 450, True),
+    ("🥈", "silver", "Aarav Sharma", 380, False),
+    ("🥉", "bronze", "Sneha Gupta", 210, False),
+]
+rows_html = ""
+for medal, rank_class, name, pts, is_me in leaderboard_data:
+    me_style = "background:#EFF6FF;border:1px solid #BFDBFE;" if is_me else ""
+    rows_html += (
+        f'<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;'
+        f'border-radius:10px;margin-bottom:4px;{me_style}">'
+        f'<span style="font-size:18px;">{medal}</span>'
+        f'<span style="font-size:13px;font-weight:600;flex:1;">{name}</span>'
+        f'<span style="font-size:12px;color:#64748B;font-weight:600;">{pts} pts</span>'
+        f'</div>'
+    )
+st.sidebar.markdown(
+    f'<div style="background:#fff;border:1px solid #E5E7EB;border-radius:18px;'
+    f'padding:14px;box-shadow:0 2px 8px rgba(30,41,59,0.04);">{rows_html}</div>',
+    unsafe_allow_html=True,
+)
 
 # Main Layout Tabs
 tab1, tab2 = st.tabs(["🚀 Report an Issue", "📊 Hyperlocal Live Map & Metrics"])
@@ -170,6 +188,7 @@ with tab1:
         # These UI fields auto-populate dynamically using the structured output from Gemini!
         issue_type = st.text_input("Detected Issue Category", value=res.get("issue_type", ""))
         severity = st.selectbox("Assigned Severity Level", ["Low", "Medium", "High"], index=["Low", "Medium", "High"].index(res.get("severity", "Medium")))
+        st.markdown(badge(severity, severity.lower(), "⚠"), unsafe_allow_html=True)
         hazard = st.checkbox("Public Safety Hazard Flagged", value=res.get("public_safety_hazard", False))
         complexity = st.text_input("Estimated Repair Complexity", value=res.get("estimated_repair_complexity", ""))
         action_log = st.text_area("System Actions / Duplicate Verification Log", value=res.get("system_action_taken", ""))
