@@ -1,0 +1,11 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local environment variables / secrets
+.env
+.venv
+env/
+venv/
+.streamlit/secrets.toml
