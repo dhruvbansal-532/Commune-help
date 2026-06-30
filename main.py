@@ -102,10 +102,46 @@ with tab1:
             type=["jpg", "jpeg", "png"]
         )
         
-        # Hyperlocal user location inputs (Simulating coordinates from Google Maps placement)
         st.subheader("📍 Hyperlocal Targeting")
-        lat_input = st.number_input("Latitude", value=30.3564, format="%.4f")
-        lng_input = st.number_input("Longitude", value=76.3647, format="%.4f")
+        
+        # --- NEW BROWSER GEOLOCATION TRACKING FEATURE ---
+        # Seamlessly request browser permission via standard JS Geolocation API
+        loc_html = """
+        <script>
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition);
+            }
+        }
+        function showPosition(position) {
+            // Send coordinates straight back to Streamlit session state query params
+            const urlParams = new URLSearchParams(window.parent.location.search);
+            window.parent.location.href = window.parent.location.pathname + '?lat=' + position.coords.latitude + '&lng=' + position.coords.longitude;
+        }
+        window.onload = getLocation;
+        </script>
+        <div style="font-family:sans-serif; font-size:14px; color:#555;">
+            📡 Requesting secure browser GPS location sync...
+        </div>
+        """
+        
+        # Execute the hidden JS component
+        st.components.v1.html(loc_html, height=35)
+        
+        # Read the coordinates passed back into the URL parameters by the browser
+        query_params = st.query_params
+        
+        # Fallback defaults (TIET coordinates) if permission is denied/pending
+        default_lat = float(query_params.get("lat", 30.3564))
+        default_lng = float(query_params.get("lng", 76.3647))
+        
+        # Show clean visual indicators instead of intimidating input fields
+        st.info(f"📍 **Target locked:** Latitude: {default_lat:.4f} | Longitude: {default_lng:.4f}")
+        
+        # Hidden or disabled inputs to prevent cluttering the user interface
+        lat_input = default_lat
+        lng_input = default_lng
+        # --- END OF GEOLOCATION UPGRADE ---
         
         if uploaded_file is not None:
             st.image(uploaded_file, caption="Uploaded Preview", use_container_width=True)
@@ -114,10 +150,9 @@ with tab1:
             if st.button("✨ Analyze Issue Natively with AI", type="primary"):
                 with st.spinner("🧠 Gemini Autonomous Agent is triaging the photo & checking records..."):
                     try:
-                        # Call the Phase 1 backend function
                         ai_result = analyze_issue_with_gemini(uploaded_file, lat_input, lng_input)
                         st.session_state.ai_result = ai_result
-                        st.success("Triage complete! Form auto-populated below.")
+                        st.success("Triage complete! Form auto-populated.")
                     except Exception as e:
                         st.error(f"Error communicating with AI: {e}")
 
